@@ -226,9 +226,19 @@ public class OAIRequestHandler extends RequestHandlerBase {
     }
 
     private void addSetToQuery(String setParam, List<String> q) {
-
-        if (setParam != null)
-            addToQuery(String.format("%s:\"%s\"", Parameters.getParam("field_index_set"), setParam), q);
+        if (setParam == null) return;
+        
+        log.debug("set: " + setParam);
+        Object setquery = Parameters.getParam("setquery_" + setParam);
+        log.debug("setquery: " + setquery);
+        String setquerytemplate = (setquery == null)
+                ? (String) Parameters.getParam("setquery_default")
+                : String.valueOf(setquery);
+        log.debug("setquerytemplate: " + setquerytemplate);
+    	String queryClause = String.format(setquerytemplate, Parameters.getParam("field_index_set"), setParam);
+        log.debug("queryClause: " + queryClause);
+        addToQuery(queryClause, q);
+        log.debug("q:\n"+q.toString());
     }
 
     private DocList runQuery(SolrQueryRequest request, List<String> q, int cursor, int len) throws IOException, SyntaxError {
@@ -277,6 +287,18 @@ public class OAIRequestHandler extends RequestHandlerBase {
         Parameters.setParam(args, "field_sort_datestamp", "datestamp");
         Parameters.setParam(args, "field_index_set", "set");
 
+        final List setquery = args.getAll("setquery");
+        if (setquery == null || setquery.isEmpty())
+            Parameters.setParam(args, "setquery_default", "%s:\"%s\"");
+        else {
+            SolrParams p = SolrParams.toSolrParams((NamedList) setquery.get(0));
+            final Iterator<String> iterator = p.getParameterNamesIterator();
+            while (iterator.hasNext()) {
+                String key = iterator.next();
+                Parameters.setParam(args, "setquery_" + key, p.get(key));
+            }
+        }
+        
         final File file = getOaiHome(args);
         if (!file.exists()) {
             log.fatal("Could not locate the oai_directory. Set the oai_home property in the solrconfig.xml's OAIRequestHandler section");

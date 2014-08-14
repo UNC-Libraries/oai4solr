@@ -38,6 +38,7 @@ public class TestOAIRequestHandler extends TestCase {
     private static long marker_until;
     private static int expectedFromUntilRange;
     private static String marked_setSpec = "setSpec1";
+    private static String custom_setSpec = "setSpec500s";
     private static int expectedSetSpec;
 
     /**
@@ -165,6 +166,31 @@ public class TestOAIRequestHandler extends TestCase {
         }
     }
 
+    public void testSetSpecCustomQuery() {
+
+        final ModifiableSolrParams params = new ModifiableSolrParams();
+        params.set("verb", "ListIdentifiers");
+        params.set("set", custom_setSpec);
+        params.set("metadataPrefix", "oai_dc");
+
+        int count = 0;
+        ResumptionTokenType resumptionToken = null;
+        do {
+            if (resumptionToken != null)
+                params.set("resumptionToken", resumptionToken.getValue());
+
+            final OAIPMHtype oai2Document = server.sendRequest(params);
+            final ListIdentifiersType listIdentifiers = oai2Document.getListIdentifiers();
+            if(listIdentifiers != null) {
+            	count = listIdentifiers.getHeader().size();
+            	// not testing setSpec in header, since this set is dynamic and not listed there
+                resumptionToken = oai2Document.getListIdentifiers().getResumptionToken();
+            }
+        } while (resumptionToken != null);
+        int expected500sIdentifiers = Math.max(0, Math.min(100, testRecordCount - 500));
+        assertEquals(expected500sIdentifiers, count);
+    }
+    
     public void testSetSpecCount() {
 
         final ModifiableSolrParams params = new ModifiableSolrParams();
@@ -189,7 +215,6 @@ public class TestOAIRequestHandler extends TestCase {
 
         assertEquals(expectedSetSpec, count);
     }
-
 
     public void testListSetsNoSetSpec() {
         final ModifiableSolrParams params = new ModifiableSolrParams();

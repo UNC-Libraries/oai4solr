@@ -61,6 +61,14 @@
 
         <!-- index for the -set value -->
         <str name="field_index_set">theme</str>
+        
+        <!-- Some sets may have custom queries defined in a Java format string below.
+        	The argument, in order, are the field_index_set above followed by the set
+        	name requested.  -->
+        <lst name="setquery">
+            <str name="default">%s:"%s"</str>
+            <str name="setSpec500s"><![CDATA[identifier:5??]]></str>
+        </lst>
 
         <!-- Some documents may be large or small, depending on the schema.
         In that case, we set the step of the paging to a lower count. -->

@@ -37,6 +37,10 @@
             <setSpec>setSpec3</setSpec>
             <setName>set name 3</setName>
         </set>
+        <set>
+            <setSpec>setSpec500s</setSpec>
+            <setName>set name 3</setName>
+        </set>
     </ListSets>
 </OAI-PMH>
 
