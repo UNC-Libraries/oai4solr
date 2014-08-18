@@ -83,6 +83,20 @@ public class TestOAIRequestHandler extends TestCase {
                     expectedSetSpec++;
 
             }
+            
+            // this assures that private records are ignored due to the filterquery config
+            for (int i = testRecordCount; i < testRecordCount+10; i++) {
+                SolrInputDocument document = new SolrInputDocument();
+                document.addField("identifier", i);
+                String datestamp = String.valueOf(1000 + i) + "-06-21T12:00:00Z";
+                Date date = Parsing.parseDatestamp(datestamp);
+                document.addField("datestamp", date);
+                document.addField("status", "private");
+                document.addField("resource", "A title " + i);
+                String theme = "setSpec" + i % 3;
+                document.addField("theme", theme);
+                server.add(document);
+            }
             server.commit();
         }
     }

@@ -243,7 +243,12 @@ public class OAIRequestHandler extends RequestHandlerBase {
         String[] queryParts = q.toArray(new String[q.size()]);
         final QParser parser = QParser.getParser(Parsing.join(queryParts, " AND "), QParserPlugin.DEFAULT_QTYPE, request);
 
-        final Query filter = null; // un used
+        Query filter = null;
+        String filterquery = (String) Parameters.getParam("filterquery");
+        if(filterquery != null) {
+        	filter = QParser.getParser(filterquery, QParserPlugin.DEFAULT_QTYPE, request).parse();
+        }
+        
         return request.getSearcher().getDocList(parser.getQuery(), filter, sort, cursor, len);
     }
 
@@ -280,6 +285,7 @@ public class OAIRequestHandler extends RequestHandlerBase {
         Parameters.setParam(args, "field_index_datestamp", "datestamp");
         Parameters.setParam(args, "field_sort_datestamp", "datestamp");
         Parameters.setParam(args, "field_index_set", "set");
+        Parameters.setParam(args, "filterquery", "");
 
         final List setquery = args.getAll("setquery");
         if (setquery == null || setquery.isEmpty())

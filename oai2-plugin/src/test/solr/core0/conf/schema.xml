@@ -29,6 +29,7 @@
         <field name="identifier" type="string" indexed="true" stored="true" required="true"/>
         <field name="datestamp" type="date" indexed="true" stored="true" required="true" default="NOW"/>
         <field name="theme" type="string" indexed="true" stored="true" required="true" multiValued="true"/>
+        <field name="status" type="string" indexed="true" stored="true" required="true" default="public"/>
         <field name="resource" type="string" indexed="false" stored="true" required="true"/>
         <field name="_version_" type="long" indexed="true" stored="true"/>
     </fields>

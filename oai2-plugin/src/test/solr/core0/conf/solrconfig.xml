@@ -62,6 +62,9 @@
         <!-- index for the -set value -->
         <str name="field_index_set">theme</str>
         
+        <!-- A filter query can be applied to all results to hide records. -->
+        <str name="filterquery">status:public</str>
+        
         <!-- Sets may have custom queries defined in a Java format string below.
         	The arguments passed are the field_index_set followed by the setSpec requested.  -->
         <lst name="setquery">
