@@ -62,11 +62,10 @@
         <!-- index for the -set value -->
         <str name="field_index_set">theme</str>
         
-        <!-- Some sets may have custom queries defined in a Java format string below.
-        	The argument, in order, are the field_index_set above followed by the set
-        	name requested.  -->
+        <!-- Sets may have custom queries defined in a Java format string below.
+        	The arguments passed are the field_index_set followed by the setSpec requested.  -->
         <lst name="setquery">
-            <str name="default">%s:"%s"</str>
+            <str name="default">%1s:"%2s"</str>
             <str name="setSpec500s"><![CDATA[identifier:5??]]></str>
         </lst>
 

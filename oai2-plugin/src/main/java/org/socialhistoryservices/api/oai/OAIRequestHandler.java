@@ -227,18 +227,12 @@ public class OAIRequestHandler extends RequestHandlerBase {
 
     private void addSetToQuery(String setParam, List<String> q) {
         if (setParam == null) return;
-        
-        log.debug("set: " + setParam);
         Object setquery = Parameters.getParam("setquery_" + setParam);
-        log.debug("setquery: " + setquery);
         String setquerytemplate = (setquery == null)
                 ? (String) Parameters.getParam("setquery_default")
                 : String.valueOf(setquery);
-        log.debug("setquerytemplate: " + setquerytemplate);
     	String queryClause = String.format(setquerytemplate, Parameters.getParam("field_index_set"), setParam);
-        log.debug("queryClause: " + queryClause);
         addToQuery(queryClause, q);
-        log.debug("q:\n"+q.toString());
     }
 
     private DocList runQuery(SolrQueryRequest request, List<String> q, int cursor, int len) throws IOException, SyntaxError {

@@ -164,14 +164,27 @@ declared in the file ListSets.xml. For example like:
         </ListSets>
     </OAI-PMH>
 
-You specify the solr index field for sets in the solrconfig.xml document with the "field_index_set" field. For example
+One way to define sets is to specify a solr index field for sets in the solrconfig.xml document with the "field_index_set" field. For example
 if your Solr schema has an appropriate field for set queries such as 'catalog_source'
 
     <field name="catalog_source" type="string" indexed="true" stored="true" multiValued="true" />
 
-Then indicate the value in your solrconfig.xml document so:
+Then indicate that field index name in the OAI Request Handler section of your solrconfig.xml document so:
 
     <str name="field_index_set">catalog_source</str>
+
+You may also specify the contents of sets via custom solr queries. This allows you to define new sets based on a combination of fields. Note
+that these dynamic sets are not referenced in the ListRecord response for an item. To specify a custom query, create a list of query elements
+in the OAI Request Handler section of your solrconfig.xml document:
+
+    <lst name="setquery">
+      <str name="default">%1s:"%2s"</str>
+      <str name="setSpec500s"><![CDATA[identifier:5??]]></str>
+    </lst>
+
+The query is specified in the Java format string (as in the String.format method). The string is formatted with two arguments, first the field_index_set and then the setSpec string.
+The default query shown gives the same behavior as if there were no setquery list. The setSpec500s query selects any records with identifiers in the range of 500 to 599, ignoring the two
+arguments.
 
 ##OAI Identifier
 An OAI identifier has the format 'oai:[domain]:[identifier]'. When this value is passed on with the GetRecord verb using the -identifier parameter,
