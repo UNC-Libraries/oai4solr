@@ -49,5 +49,13 @@ limitations under the License.
             </plugin>
         </plugins>
     </build>
+    
+    <repositories>
+        <repository>
+            <id>maven.restlet.org</id>
+            <name>maven.restlet.org</name>
+            <url>https://maven.restlet.talend.com/</url>
+        </repository> 
+    </repositories>
 
 </project>
