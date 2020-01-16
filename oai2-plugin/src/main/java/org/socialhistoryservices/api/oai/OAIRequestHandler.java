@@ -1,7 +1,7 @@
 /*
  * OAI4Solr exposes your Solr indexes by adding a OAI2 protocol handler.
  *
- *     Copyright (c) 2011-2014  International Institute of Social History
+ *     Copyright (c) 2011-2017  International Institute of Social History
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
+import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.core.SolrResourceLoader;
@@ -49,6 +50,7 @@ import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -63,22 +65,30 @@ import java.util.List;
 public class OAIRequestHandler extends RequestHandlerBase {
 
     private final Log log = LogFactory.getLog(this.getClass());
+    private final static String WT = "oai";  // The request writer
+    private int id;
 
 
     @Override
-    /**
+    /*
      * Here we instantiate the oai request and validate the parameters.
      *
      */
+    @SuppressWarnings("unchecked")
     public void handleRequestBody(SolrQueryRequest request, SolrQueryResponse response) throws Exception {
 
         final NamedList<Object> list = request.getParams().toNamedList();
-        list.add("wt", Parameters.getParam("wt", "oai")); // The request writer
+        list.add(CommonParams.WT, Parameters.getParam(getId(), CommonParams.WT, WT));
+
+        // Add the xslt parameters from solrconfig
+        final NamedList xslt_parameters = (NamedList) Parameters.getParam(getId(), "xslt_parameters");
+        list.addAll(xslt_parameters);
+
         request.setParams(SolrParams.toSolrParams(list));
 
         OAIPMHtype oai = new OAIPMHtype();
+        response.add("id", getId());
         response.add("oai", oai);
-
 
         VerbType verb;
         try {
@@ -98,13 +108,21 @@ public class OAIRequestHandler extends RequestHandlerBase {
 
         switch (verb) {
             case IDENTIFY:
-            case LIST_SETS:
             case LIST_METADATA_FORMATS:
                 response.getValues().remove("oai");
-                oai = Parameters.getParam(verb);
+                oai = Parameters.getParam(getId(), verb);
                 oai.setRequest(oaiRequest);
                 response.add("oai", oai);
-
+                break;
+            case LIST_SETS:
+                oai = Parameters.getParam(getId(), verb);
+                if (oai == null) {
+                    Validation.error(response, OAIPMHerrorcodeType.NO_SET_HIERARCHY);
+                    return;
+                }
+                response.getValues().remove("oai");
+                oai.setRequest(oaiRequest);
+                response.add("oai", oai);
                 break;
             case GET_RECORD:
             case LIST_IDENTIFIERS:
@@ -121,7 +139,7 @@ public class OAIRequestHandler extends RequestHandlerBase {
         boolean token_good = true;
         ResumptionToken oaiRequest = null;
         try {
-            oaiRequest = ResumptionToken.decodeResumptionToken(params.get("resumptionToken"));
+            oaiRequest = ResumptionToken.decodeResumptionToken(getId(), params.get("resumptionToken"));
         } catch (Exception e) {
             token_good = false;
         }
@@ -134,7 +152,7 @@ public class OAIRequestHandler extends RequestHandlerBase {
             oaiRequest.setUntil(params.get("until"));
             oaiRequest.setSet(params.get("set"));
             oaiRequest.setResumptionToken(params.get("resumptionToken"));
-            oaiRequest.setValue((String) Parameters.getParam("proxyurl"));
+            oaiRequest.setValue((String) Parameters.getParam(getId(), "proxyurl"));
             oaiRequest.setResumptiontokenHealth(token_good);
         } else {
             oaiRequest.setVerb(verb);
@@ -153,24 +171,24 @@ public class OAIRequestHandler extends RequestHandlerBase {
 
     private void buildQuery(SolrQueryRequest request, SolrQueryResponse response, ResumptionToken oaiRequest, VerbType verb, OAIPMHtype oai) throws java.text.ParseException, IOException, SyntaxError {
 
-        List<String> q = new ArrayList<String>();
-        Object maxrecords = Parameters.getParam("maxrecords_" + oaiRequest.getMetadataPrefix());
+        List<String> q = new ArrayList<>();
+        Object maxrecords = Parameters.getParam(getId(), "maxrecords_" + oaiRequest.getMetadataPrefix());
         int len = (maxrecords == null)
-                ? (Integer) Parameters.getParam("maxrecords_default")
+                ? (Integer) Parameters.getParam(getId(), "maxrecords_default")
                 : Integer.parseInt(String.valueOf(maxrecords));
 
         DocList docList = null;
         switch (verb) {
             case LIST_IDENTIFIERS:
             case LIST_RECORDS:
-                if (!Validation.isValidMetadataPrefix(response, oaiRequest)) {
+                if (!Validation.isValidMetadataPrefix(getId(), response, oaiRequest)) {
                     return;
                 }
 
-                if (!Validation.isValidDatestamp(oaiRequest.getFrom(), "from", response))
+                if (!Validation.isValidDatestamp(getId(), oaiRequest.getFrom(), "from", response))
                     return;
 
-                if (!Validation.isValidDatestamp(oaiRequest.getUntil(), "until", response)) {
+                if (!Validation.isValidDatestamp(getId(), oaiRequest.getUntil(), "until", response)) {
                     return;
                 }
 
@@ -181,9 +199,9 @@ public class OAIRequestHandler extends RequestHandlerBase {
                 String from = Parsing.parseRange(oaiRequest.getFrom(), "from");
                 String until = Parsing.parseRange(oaiRequest.getUntil(), "until");
 
-                q.add(String.format("%s:[%s TO %s]", Parameters.getParam("field_index_datestamp"), from, until));
+                q.add(String.format("%s:[%s TO %s]", Parameters.getParam(getId(), "field_index_datestamp"), from, until));
 
-                if (Validation.isValidSet(oaiRequest.getSet(), response))
+                if (Validation.isValidSet(getId(), oaiRequest.getSet(), response))
                     addSetToQuery(oaiRequest.getSet(), q);
                 else
                     return;
@@ -196,7 +214,7 @@ public class OAIRequestHandler extends RequestHandlerBase {
                     return;
 
                 final ResumptionTokenType rt = (docList.matches() > nextCursor)
-                        ? ResumptionToken.encodeResumptionToken(oaiRequest, cursor, nextCursor, docList.matches(), (Integer) Parameters.getParam("resumptionTokenExpirationInSeconds"))
+                        ? ResumptionToken.encodeResumptionToken(getId(), oaiRequest, cursor, nextCursor, docList.matches(), (Integer) Parameters.getParam(getId(), "resumptionTokenExpirationInSeconds"))
                         : null;
 
                 if (verb == VerbType.LIST_RECORDS)
@@ -209,10 +227,10 @@ public class OAIRequestHandler extends RequestHandlerBase {
                 if (!Validation.isValidIdentifier(response, oaiRequest)) {
                     return;
                 }
-                if (!Validation.isValidMetadataPrefix(response, oaiRequest)) {
+                if (!Validation.isValidMetadataPrefix(getId(), response, oaiRequest)) {
                     return;
                 }
-                addToQuery(String.format("%s:\"%s\"", Parameters.getParam("field_index_identifier"), Parsing.stripOaiPrefix(oaiRequest.getIdentifier())), q);
+                addToQuery(String.format("%s:\"%s\"", Parameters.getParam(getId(), "field_index_identifier"), Parsing.stripOaiPrefix(getId(), oaiRequest.getIdentifier())), q);
                 docList = runQuery(request, q, 0, 1);
                 oai.setGetRecord(getRecord(response, docList));
                 break;
@@ -225,30 +243,42 @@ public class OAIRequestHandler extends RequestHandlerBase {
         q.add(query);
     }
 
+    /**
+     * addSetToQuery
+     *
+     * @param setParam The index or query template string
+     * @param q        The query list
+     */
     private void addSetToQuery(String setParam, List<String> q) {
-        if (setParam == null) return;
-        Object setquery = Parameters.getParam("setquery_" + setParam);
-        String setquerytemplate = (setquery == null)
-                ? (String) Parameters.getParam("setquery_default")
-                : String.valueOf(setquery);
-    	String queryClause = String.format(setquerytemplate, Parameters.getParam("field_index_set"), setParam);
-        addToQuery(queryClause, q);
+
+        if (setParam != null) {
+            final String field_index_set = (String) Parameters.getParam(getId(), "field_index_set");
+            if (field_index_set.contains("%s"))
+                addToQuery(String.format(field_index_set, setParam), q);
+            else
+                addToQuery(String.format("%s:\"%s\"", field_index_set, setParam), q);
+        }
     }
 
     private DocList runQuery(SolrQueryRequest request, List<String> q, int cursor, int len) throws IOException, SyntaxError {
 
-        final SortField sortField = new SortField((String) Parameters.getParam("field_sort_datestamp"), SortField.Type.LONG, false);
+        final SortField sortField = new SortField((String) Parameters.getParam(getId(), "field_sort_datestamp"), SortField.Type.LONG, false);
         final Sort sort = new Sort(sortField);
 
         String[] queryParts = q.toArray(new String[q.size()]);
-        final QParser parser = QParser.getParser(Parsing.join(queryParts, " AND "), QParserPlugin.DEFAULT_QTYPE, request);
+        String join = Parsing.join(queryParts, " AND ");
+        final String static_query = (String) Parameters.getParam(getId(), "static_query");
+        if (!static_query.isEmpty()) join += " AND (" + static_query + ")";
+        final QParser parser = QParser.getParser(join, QParserPlugin.DEFAULT_QTYPE, request);
 
         Query filter = null;
-        String filterquery = (String) Parameters.getParam("filterquery");
-        if(filterquery != null) {
-        	filter = QParser.getParser(filterquery, QParserPlugin.DEFAULT_QTYPE, request).parse();
+        if (Parameters.getBool(getId(), "enable_filter_query", false)) {
+            final String fq = request.getParams().get("fq");
+            if (fq != null) {
+                filter = QParser.getParser(fq, QParserPlugin.DEFAULT_QTYPE, request).getQuery();
+            }
         }
-        
+
         return request.getSearcher().getDocList(parser.getQuery(), filter, sort, cursor, len);
     }
 
@@ -275,17 +305,20 @@ public class OAIRequestHandler extends RequestHandlerBase {
     @Override
     public void init(NamedList args) {
         super.init(args);
-        Parameters.setParam(args, "wt", "oai");
-        Parameters.setParam(args, "proxyurl", "");
-        Parameters.setParam(args, "maxrecords", 200);
-        Parameters.setParam(args, "resumptionTokenExpirationInSeconds", 86400);
-        Parameters.setParam(args, "separator", ",");
-        Parameters.setParam(args, "field_index_identifier", "id");
-        Parameters.setParam(args, "prefix", "");
-        Parameters.setParam(args, "field_index_datestamp", "datestamp");
-        Parameters.setParam(args, "field_sort_datestamp", "datestamp");
-        Parameters.setParam(args, "field_index_set", "set");
-        Parameters.setParam(args, "filterquery", "");
+        setId(args.get("id"));
+        Parameters.setParam(getId(), args, "wt", "oai");
+        Parameters.setParam(getId(), args, "proxyurl", "");
+        Parameters.setParam(getId(), args, "maxrecords", 200);
+        Parameters.setParam(getId(), args, "resumptionTokenExpirationInSeconds", 86400);
+        Parameters.setParam(getId(), args, "separator", ",");
+        Parameters.setParam(getId(), args, "field_index_identifier", "id");
+        Parameters.setParam(getId(), args, "prefix", "");
+        Parameters.setParam(getId(), args, "field_index_datestamp", "datestamp");
+        Parameters.setParam(getId(), args, "field_sort_datestamp", "datestamp");
+        Parameters.setParam(getId(), args, "field_index_set", "set");
+        Parameters.setParam(getId(), args, "static_query", "");
+        Parameters.setParam(getId(), args, "enable_filter_query", false);
+        Parameters.setParam(getId(), args, "xslt_parameters", new NamedList<List>());
 
         final List setquery = args.getAll("setquery");
         if (setquery == null || setquery.isEmpty())
@@ -306,18 +339,18 @@ public class OAIRequestHandler extends RequestHandlerBase {
         }
 
         final List maxrecords = args.getAll("maxrecords");
-        if (maxrecords == null)
-            Parameters.setParam(args, "maxrecords_default", 200);
+        if (maxrecords.size() == 0)
+            Parameters.setParam(getId(), args, "maxrecords_default", 200);
         else {
             SolrParams p = SolrParams.toSolrParams((NamedList) maxrecords.get(0));
             final Iterator<String> iterator = p.getParameterNamesIterator();
             while (iterator.hasNext()) {
                 String key = iterator.next();
-                Parameters.setParam(args, "maxrecords_" + key, p.getInt(key));
+                Parameters.setParam(getId(), args, "maxrecords_" + key, p.getInt(key));
             }
         }
 
-        // Add our marchallers
+        // Add our marshallers
         try {
             final JAXBContext jc = JAXBContext.newInstance(ObjectFactory.class);
             Parameters.setParam("marshaller", jc.createMarshaller());
@@ -327,31 +360,42 @@ public class OAIRequestHandler extends RequestHandlerBase {
         }
 
         try {
-            Parameters.setParam(VerbType.IDENTIFY, Parsing.loadStaticVerb(VerbType.IDENTIFY));
-            Parameters.setParam(VerbType.LIST_SETS, Parsing.loadStaticVerb(VerbType.LIST_SETS));
-            Parameters.setParam(VerbType.LIST_METADATA_FORMATS, Parsing.loadStaticVerb(VerbType.LIST_METADATA_FORMATS));
+            Parameters.setParam(getId(), VerbType.IDENTIFY, Parsing.loadStaticVerb(getId(), VerbType.IDENTIFY));
         } catch (FileNotFoundException e) {
             log.warn(e);
         } catch (JAXBException e) {
             log.error(e);
         }
 
+        try {
+            Parameters.setParam(getId(), VerbType.LIST_METADATA_FORMATS, Parsing.loadStaticVerb(getId(), VerbType.LIST_METADATA_FORMATS));
+        } catch (FileNotFoundException e) {
+            log.warn(e);
+        } catch (JAXBException e) {
+            log.error(e);
+        }
+
+        try {
+            Parameters.setParam(getId(), VerbType.LIST_SETS, Parsing.loadStaticVerb(getId(), VerbType.LIST_SETS));
+        } catch (FileNotFoundException e) {
+            log.warn(e);
+        } catch (JAXBException e) {
+            log.error(e);
+        }
 
         addStylesheets(file);
     }
 
     private File getOaiHome(NamedList args) {
-        String solr_home = SolrResourceLoader.locateSolrHome();
-        if (solr_home == null)
-            solr_home = System.getProperty("solr.solr.home");
+        Path solr_home = SolrResourceLoader.locateSolrHome();
         String oai_home = (String) args.get("oai_home");
         oai_home = (oai_home == null)
-                ? solr_home + File.separatorChar + "oai"
+                ? solr_home.toString() + File.separatorChar + "oai"
                 : solr_home + oai_home;
         File file = new File(oai_home);
         log.info("oai_home=" + oai_home);
         args.remove("oai_home");
-        Parameters.setParam(args, "oai_home", oai_home);
+        Parameters.setParam(getId(), args, "oai_home", oai_home);
         return file;
     }
 
@@ -365,19 +409,25 @@ public class OAIRequestHandler extends RequestHandlerBase {
             }
         })) {
 
-            final TransformerFactory tf = TransformerFactory.newInstance();
-            try {
-                final Source xslSource = new StreamSource(file);
-                xslSource.setSystemId(file.toURI().toURL().toString());
-                final Templates templates = tf.newTemplates(xslSource);
-                String metadataPrefix = FilenameUtils.removeExtension(file.getName());
-                Parameters.setParam(metadataPrefix, templates);
-            } catch (TransformerConfigurationException e) {
-                log.error(e);
-            } catch (MalformedURLException e) {
-                log.error(e);
+                final TransformerFactory tf = TransformerFactory.newInstance();
+                try {
+                    final Source xslSource = new StreamSource(file);
+                    xslSource.setSystemId(file.toURI().toURL().toString());
+                    final Templates templates = tf.newTemplates(xslSource);
+                    String metadataPrefix = FilenameUtils.removeExtension(file.getName());
+                    Parameters.setParam(getId(), metadataPrefix, templates);
+                } catch (TransformerConfigurationException | MalformedURLException e) {
+                    log.error(e);
+                }
             }
-        }
+    }
+
+    private void setId(Object id) {
+        this.id = (id == null ? hashCode() : (int) id);
+    }
+
+    private int getId() {
+        return id;
     }
 
     @Override
@@ -385,13 +435,11 @@ public class OAIRequestHandler extends RequestHandlerBase {
         return "An OAI2 request handler";
     }
 
-    @Override
     public String getSource() {
         return "$URL: https://github.com/IISH/oai4solr $";
     }
 
-    @Override
     public String getVersion() {
-        return "$3.x-1.0 $";
+        return "$7.x-1.0 $";
     }
 }

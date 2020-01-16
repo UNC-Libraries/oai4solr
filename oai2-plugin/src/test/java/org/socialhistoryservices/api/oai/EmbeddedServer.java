@@ -42,11 +42,11 @@ import java.util.Map;
  *
  * Furthermore we add some helper methods for unmarchall and lookup actions.
  */
-public class EmbeddedServer extends EmbeddedSolrServer {
+public class EmbeddedServer extends EmbeddedSolrServer2 {
 
     private final Log log = LogFactory.getLog(this.getClass());
 
-    public EmbeddedServer(CoreContainer coreContainer, String coreName) {
+    EmbeddedServer(CoreContainer coreContainer, String coreName) {
         super(coreContainer, coreName);
     }
 
@@ -59,9 +59,8 @@ public class EmbeddedServer extends EmbeddedSolrServer {
      * @param response The response set by the OAIRequestHandler
      * @return The request and response objects.
      */
-    @Override
     public NamedList<Object> getParsedResponse(SolrQueryRequest request, SolrQueryResponse response) {
-        final NamedList<Object> list = new NamedList<Object>();
+        final NamedList<Object> list = new NamedList<>();
         list.add("request", request);
         list.add("response", response);
         return list;
@@ -76,7 +75,7 @@ public class EmbeddedServer extends EmbeddedSolrServer {
      * @return The OAI2 response.
      */
     @SuppressWarnings("unchecked")
-    public OAIPMHtype sendRequest( SolrParams oai_params) {
+    OAIPMHtype sendRequest(SolrParams oai_params) {
 
         // Create a request with the desired oai parameters and set the OAI handler
         SolrRequest request = new QueryRequest(oai_params);
@@ -85,10 +84,8 @@ public class EmbeddedServer extends EmbeddedSolrServer {
 
         // make the request
         try {
-            list = request(request);
-        } catch (SolrServerException e) {
-            log.error(e);
-        } catch (IOException e) {
+            list = request(request, TestOAIRequestHandler.CORE);
+        } catch (SolrServerException | IOException e) {
             log.error(e);
         }
         assert list != null;
@@ -127,7 +124,7 @@ public class EmbeddedServer extends EmbeddedSolrServer {
      * @param xquery The node to look for
      * @return The value of the node
      */
-    public String GetNode(Node node, String xquery) {
+    String GetNode(Node node, String xquery) {
 
         XPathExpression expr;
         Object evaluate = null;
@@ -161,7 +158,7 @@ public class EmbeddedServer extends EmbeddedSolrServer {
             @Override
             public String getNamespaceURI(String prefix) {
 
-                Map<String, String> namespaces = new HashMap<String, String>();
+                Map<String, String> namespaces = new HashMap<>();
                 namespaces.put("oai_dc", "http://www.openarchives.org/OAI/2.0/oai_dc/");
                 namespaces.put("dc", "http://purl.org/dc/elements/1.1/");
                 namespaces.put("oai", "http://www.openarchives.org/OAI/2.0/");

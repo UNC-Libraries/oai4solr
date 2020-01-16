@@ -2,7 +2,7 @@
 <!--
   ~ OAI4Solr exposes your Solr indexes using an OAI2 protocol handler.
   ~
-  ~     Copyright (c) 2011-2014  International Institute of Social History
+  ~     Copyright (c) 2011-2017  International Institute of Social History
   ~
   ~     This program is free software: you can redistribute it and/or modify
   ~     it under the terms of the GNU General Public License as published by
@@ -22,23 +22,22 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/
          http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
-    <!-- You may leave out the responseDate and request elements.
-     The records in this demo will get these set values randomly assigned. -->
-    <ListSets>
-        <set>
-            <setSpec>setSpec0</setSpec>
-            <setName>A setspec</setName>
-            <setDescription>description 1</setDescription>
-        </set>
-        <set>
-            <setSpec>setSpec1</setSpec>
-            <setName>Another setspec</setName>
-        </set>
-        <set>
-            <setSpec>setSpec2</setSpec>
-            <setName>And another setspec</setName>
-        </set>
-    </ListSets>
+    <!-- You may leave out the responseDate and request elements -->
+    <ListMetadataFormats>
+        <metadataFormat>
+            <metadataPrefix>oai_dc</metadataPrefix>
+            <schema>http://www.openarchives.org/OAI/2.0/oai_dc.xsd</schema>
+            <metadataNamespace>http://www.openarchives.org/OAI/2.0/oai_dc/</metadataNamespace>
+        </metadataFormat>
+        <metadataFormat>
+            <metadataPrefix>marcxml</metadataPrefix>
+            <schema>http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd</schema>
+            <metadataNamespace>http://www.loc.gov/MARC21/slim</metadataNamespace>
+        </metadataFormat>
+        <metadataFormat>
+            <metadataPrefix>solr</metadataPrefix>
+            <schema>http://wiki.apache.org/solr/solr.xsd</schema>
+            <metadataNamespace>http://wiki.apache.org/solr/</metadataNamespace>
+        </metadataFormat>
+    </ListMetadataFormats>
 </OAI-PMH>
-
-
