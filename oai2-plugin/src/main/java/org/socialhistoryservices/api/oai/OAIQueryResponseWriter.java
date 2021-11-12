@@ -32,9 +32,9 @@ import org.openarchives.oai2.OAIPMHtype;
 import org.openarchives.oai2.RequestType;
 import org.openarchives.oai2.ResumptionTokenType;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Result;
