@@ -11,7 +11,7 @@ import org.apache.solr.core.CoreContainer;
 import org.openarchives.oai2.*;
 import org.w3c.dom.Node;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
 import java.io.FileNotFoundException;

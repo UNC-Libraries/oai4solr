@@ -2,7 +2,7 @@ package org.openarchives.oai2;
 
 import org.socialhistoryservices.api.oai.Parsing;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 /**

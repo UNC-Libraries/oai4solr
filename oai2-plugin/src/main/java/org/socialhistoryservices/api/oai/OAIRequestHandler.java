@@ -38,8 +38,8 @@ import org.apache.solr.search.QParserPlugin;
 import org.apache.solr.search.SyntaxError;
 import org.openarchives.oai2.*;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
 import javax.xml.transform.Source;
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;

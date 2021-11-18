@@ -23,9 +23,9 @@ import org.openarchives.oai2.GranularityType;
 import org.openarchives.oai2.OAIPMHtype;
 import org.openarchives.oai2.VerbType;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -128,8 +128,8 @@ public class Parsing {
      * parseRange
      * <p/>
      * The range will determine to pad to the present or future:
-     * range(from)  => 2001-02-03 => 2001-02-03T00:00:00Z
-     * range(until) => 2001-02-03 => 2001-02-03T23:59:59Z
+     * range(from)  => 2001-02-03 => 2001-02-03T00:00:00.000Z
+     * range(until) => 2001-02-03 => 2001-02-03T23:59:59.999Z
      * <p/>
      *
      * @return An ISO 8601 formatted date or an infinite range Lucene character when the date is null
@@ -138,8 +138,12 @@ public class Parsing {
 
         if (datestamp == null) return "*";
 
-        return (datestamp.length() == GranularityType.YYYY_MM_DD_THH_MM_SS_Z.value().length()) ? datestamp
-                : (range.equalsIgnoreCase("from")) ? datestamp.concat("T00:00:00Z") : datestamp.concat("T23:59:59Z");
+        boolean from = range.equalsIgnoreCase("from");
+        if (datestamp.length() == GranularityType.YYYY_MM_DD_THH_MM_SS_Z.value().length()) {
+            return datestamp.replace("Z", from ? ".000Z" : ".999Z");
+        } else {
+            return datestamp.concat(from ? "T00:00:00.000Z" : "T23:59:59.999Z");
+        }
     }
 
 
