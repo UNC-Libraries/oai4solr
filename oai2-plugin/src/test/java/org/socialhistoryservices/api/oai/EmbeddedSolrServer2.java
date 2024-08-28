@@ -19,6 +19,7 @@ package org.socialhistoryservices.api.oai;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import com.google.common.base.Strings;
 
@@ -71,7 +72,7 @@ public class EmbeddedSolrServer2 extends SolrClient {
      * @param defaultCoreName the core to route requests to by default
      */
     public EmbeddedSolrServer2(Path solrHome, String defaultCoreName) {
-        this(load(new CoreContainer(SolrXmlConfig.fromSolrHome(solrHome))), defaultCoreName);
+        this(load(new CoreContainer(SolrXmlConfig.fromSolrHome(solrHome, null))), defaultCoreName);
     }
 
     /**

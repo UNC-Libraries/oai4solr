@@ -50,6 +50,11 @@ limitations under the License.
             <version>1.1.1</version>
         </dependency>
         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.16.1</version>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
             <version>1.6.1</version>
@@ -79,7 +84,7 @@ limitations under the License.
     </developers>
 
     <properties>
-        <solr.version>8.4.1</solr.version>
+        <solr.version>9.4.1</solr.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 

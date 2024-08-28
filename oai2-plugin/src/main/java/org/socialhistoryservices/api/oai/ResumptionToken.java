@@ -19,13 +19,13 @@
 
 package org.socialhistoryservices.api.oai;
 
-import org.apache.solr.common.util.Base64;
 import org.openarchives.oai2.RequestType;
 import org.openarchives.oai2.ResumptionTokenType;
 import org.openarchives.oai2.VerbType;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.util.Base64;
 import java.util.Date;
 
 /**
@@ -72,7 +72,7 @@ class ResumptionToken extends RequestType {
         final String s = (String) Parameters.getParam(prefix, "separator", ",");
         String token = oaiResumptionToken.getVerb().value() + s + getValue(oaiResumptionToken.getFrom()) + s + getValue(oaiResumptionToken.getUntil()) + s + getValue(oaiResumptionToken.getSet()) + s + getValue(oaiResumptionToken.getMetadataPrefix()) + s + nextCursor;
         final byte[] bytes = token.getBytes("utf-8");
-        resumptionToken.setValue(Base64.byteArrayToBase64(bytes, 0, bytes.length));
+        resumptionToken.setValue(Base64.getEncoder().encodeToString(bytes));
         return resumptionToken;
     }
 
@@ -95,7 +95,7 @@ class ResumptionToken extends RequestType {
 
         if (token == null)
             return null;
-        final byte[] bytes = Base64.base64ToByteArray(token);
+        final byte[] bytes = Base64.getDecoder().decode(token);
         String pt = new String(bytes, "utf-8");
         final String separator = (String) Parameters.getParam(prefix, "separator", ",");
         final String[] split = pt.split(separator, 6);

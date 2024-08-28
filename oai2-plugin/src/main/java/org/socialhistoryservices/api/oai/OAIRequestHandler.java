@@ -36,6 +36,7 @@ import org.apache.solr.search.DocList;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.QParserPlugin;
 import org.apache.solr.search.SyntaxError;
+import org.apache.solr.security.AuthorizationContext;
 import org.openarchives.oai2.*;
 
 import jakarta.xml.bind.JAXBContext;
@@ -304,6 +305,7 @@ public class OAIRequestHandler extends RequestHandlerBase {
     @Override
     public void init(NamedList args) {
         super.init(args);
+        log.error("====Arguments are: " + args);
         setId(args.get("id"));
         Parameters.setParam(getId(), args, "wt", "oai");
         Parameters.setParam(getId(), args, "proxyurl", "");
@@ -374,11 +376,11 @@ public class OAIRequestHandler extends RequestHandlerBase {
     }
 
     private File getOaiHome(NamedList args) {
-        Path solr_home = SolrResourceLoader.locateSolrHome();
+//        Path solr_home = SolrResourceLoader.locateSolrHome();
         String oai_home = (String) args.get("oai_home");
-        oai_home = (oai_home == null)
-                ? solr_home.toString() + File.separatorChar + "oai"
-                : solr_home + oai_home;
+//        oai_home = (oai_home == null)
+//                ? solr_home.toString() + File.separatorChar + "oai"
+//                : solr_home + oai_home;
         File file = new File(oai_home);
         log.info("oai_home=" + oai_home);
         args.remove("oai_home");
@@ -425,5 +427,10 @@ public class OAIRequestHandler extends RequestHandlerBase {
 
     public String getVersion() {
         return "$8.x-1.0 $";
+    }
+
+    @Override
+    public Name getPermissionName(AuthorizationContext authorizationContext) {
+        return Name.READ_PERM;
     }
 }

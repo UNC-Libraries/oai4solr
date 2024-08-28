@@ -8,6 +8,7 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.core.CoreContainer;
+import org.apache.solr.core.SolrXmlConfig;
 import org.openarchives.oai2.*;
 import org.w3c.dom.Node;
 
@@ -17,6 +18,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Paths;
 import java.util.Date;
 
 /**
@@ -59,7 +61,8 @@ public class TestOAIRequestHandler extends TestCase {
             FileUtils.deleteDirectory(new File(solr_home + "/" + CORE + "/data/tlog/"));
 
             Parameters.clearParams();
-            final CoreContainer coreContainer = new CoreContainer(solr_home);
+//            final CoreContainer coreContainer = new CoreContainer(Paths.get(solr_home), null);
+            final CoreContainer coreContainer = new CoreContainer(SolrXmlConfig.fromSolrHome(Paths.get(solr_home), null));
             coreContainer.load();
             server = new EmbeddedServer(coreContainer, CORE);
             marker_from = Parsing.parseDatestamp(datestamp_from).getTime();
